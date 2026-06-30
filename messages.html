@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messages | Blacklist Division</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+
+    <div class="logo">
+        BLACKLIST DIVISION
+    </div>
+
+    <nav>
+        <a href="index.html" class="navButton">Home</a>
+            <a href="members.html" class="navButton">Members</a>
+            <a href="messages.html" class="navButton">Messages</a>
+            <a href="files.html" class="navButton">Files</a>
+            <a href="signup.html" class="navButton">Join</a>
+            <a href="login.html" class="navButton">Login</a>
+    </nav>
+
+</header>
+
+<main class="board">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+
+        <h2>Channels</h2>
+
+        <button class="channel active" data-channel="announcements">Announcements</button>
+        <button class="channel" data-channel="general">General</button>
+        <button class="channel" data-channel="operations">Operations</button>
+
+    </aside>
+
+    <!-- Chat Area -->
+    <section class="chat">
+
+        <div class="messages" id="messages">
+
+            <div class="message">
+                <div class="messageHeader">
+                    <span class="author">El Vacio</span>
+                    <span class="time">Today 8:43 PM</span>
+                </div>
+                <div class="messageBody">
+                    Welcome to the board.
+                </div>
+            </div>
+
+        </div>
+
+        <div class="messageInput">
+
+            <textarea placeholder="Write a message..."></textarea>
+            <button>Send</button>
+
+        </div>
+
+    </section>
+
+</main>
+
+<script type="module" src="script.js"></script>
+</body>
+</html>

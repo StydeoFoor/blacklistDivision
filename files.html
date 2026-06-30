@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Files | Blacklist Division</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+
+    <div class="logo">
+        BLACKLIST DIVISION
+    </div>
+
+    <nav>
+        <a href="index.html" class="navButton">Home</a>
+            <a href="members.html" class="navButton">Members</a>
+            <a href="messages.html" class="navButton">Messages</a>
+            <a href="files.html" class="navButton">Files</a>
+            <a href="signup.html" class="navButton">Join</a>
+            <a href="login.html" class="navButton">Login</a>
+    </nav>
+
+</header>
+
+<main class="filesLayout">
+
+    <!-- LEFT: Folders -->
+    <aside class="fileSidebar">
+
+        <h2>Directories</h2>
+
+        <button class="folder active">General</button>
+        <button class="folder">Images</button>
+        <button class="folder">Notes</button>
+        <button class="folder">Archive</button>
+
+    </aside>
+
+    <!-- RIGHT: Files -->
+    <section class="fileMain">
+
+        <h1>Files</h1>
+        <p class="subtext">Select a directory to view contents.</p>
+
+        <div class="fileGrid">
+
+            <div class="fileCard">
+                <div class="fileIcon">📄</div>
+                <div class="fileName">welcome.txt</div>
+                <div class="fileMeta">Text File • 2 KB</div>
+            </div>
+
+            <div class="fileCard">
+                <div class="fileIcon">🖼️</div>
+                <div class="fileName">group.png</div>
+                <div class="fileMeta">Image • 1.4 MB</div>
+            </div>
+
+            <div class="fileCard">
+                <div class="fileIcon">📄</div>
+                <div class="fileName">notes.txt</div>
+                <div class="fileMeta">Text File • 6 KB</div>
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+<script type="module" src="script.js"></script>
+</body>
+</html>
