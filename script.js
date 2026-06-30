@@ -78,6 +78,34 @@ App.signup = async (username, password, fullName, referral) => {
     });
 };
 
+const signupBtn = document.getElementById("signupButton");
+
+if (signupBtn) {
+
+    signupBtn.addEventListener("click", async () => {
+
+        const inputs = document.querySelectorAll(".loginCard input");
+
+        const fullName = inputs[0].value;
+        const username = inputs[1].value;
+        const password = inputs[2].value;
+        const referral = inputs[3].value;
+
+        if (!username || !password) {
+            alert("Nickname and password required");
+            return;
+        }
+
+        try {
+            await App.signup(username, password, fullName, referral);
+            alert("Account created successfully");
+        } catch (err) {
+            console.error(err);
+            alert(err.message);
+        }
+    });
+}
+
 App.login = async (username, password) => {
 
     const email = makeEmail(username);
