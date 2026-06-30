@@ -19,9 +19,7 @@ import {
     orderByChild
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
 
-/* -----------------------------
-   FIREBASE INIT
------------------------------ */
+/* ---------------- FIREBASE ---------------- */
 
 const firebaseConfig = {
   apiKey: "AIzaSyByFGPF4f4kh_dmvWhrvVg5k-agCR4cxmI",
@@ -38,9 +36,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-/* -----------------------------
-   GLOBAL STATE
------------------------------ */
+/* ---------------- GLOBAL STATE ---------------- */
 
 const App = {
     user: null,
@@ -49,41 +45,37 @@ const App = {
 
 window.App = App;
 
-/* -----------------------------
-   AUTH STATE
------------------------------ */
-
-onAuthStateChanged(auth, (user) => {
-    App.user = user;
-});
-
-/* -----------------------------
-   HELPERS
------------------------------ */
+/* ---------------- HELPERS ---------------- */
 
 function makeEmail(username) {
     return username.toLowerCase().replace(/\s/g, "") + "@blacklist.local";
 }
 
-/* -----------------------------
-   AUTH (SAFE)
------------------------------ */
+function formatTime(ms) {
+    if (!ms) return "";
+    return new Date(ms).toLocaleString();
+}
 
-App.signup = async (username, password) => {
+/* ---------------- AUTH ---------------- */
+
+App.signup = async (username, password, fullName, referral) => {
 
     const email = makeEmail(username);
 
     const cred = await createUserWithEmailAndPassword(auth, email, password);
 
-    await updateProfile(cred.user, {
+    const user = cred.user;
+
+    await updateProfile(user, {
         displayName: username
     });
 
-    await set(ref(db, "users/" + cred.user.uid), {
+    await set(ref(db, "users/" + user.uid), {
         username,
+        fullName,
+        referral,
         createdAt: Date.now()
     });
-
 };
 
 App.login = async (username, password) => {
@@ -97,17 +89,23 @@ App.logout = async () => {
     await signOut(auth);
 };
 
-/* -----------------------------
-   MESSAGES SYSTEM
------------------------------ */
+onAuthStateChanged(auth, (user) => {
+    App.user = user || null;
+});
+
+/* ---------------- CHANNELS ---------------- */
+
+App.setChannel = (channel) => {
+    App.channel = channel;
+};
+
+/* ---------------- MESSAGES ---------------- */
 
 App.sendMessage = async (text) => {
 
-    if (!App.user) return;
+    if (!App.user || !text) return;
 
-    const msgRef = push(ref(db, "messages"));
-
-    await set(msgRef, {
+    await push(ref(db, "messages"), {
         text,
         author: App.user.displayName,
         uid: App.user.uid,
@@ -121,30 +119,19 @@ App.listenMessages = (callback) => {
     const q = query(ref(db, "messages"), orderByChild("createdAt"));
 
     onValue(q, (snap) => {
-
         const data = snap.val() || {};
         callback(Object.values(data));
     });
 };
 
-App.setChannel = (c) => {
-    App.channel = c;
-};
+/* ---------------- MESSAGES PAGE ---------------- */
 
-/* =========================================================
-   🧠 PAGE DETECTION (THIS FIXES YOUR ERROR)
-========================================================= */
-
-/* -----------------------------
-   MESSAGES PAGE
------------------------------ */
-
-const messagesContainer = document.getElementById("messages");
+const messagesBox = document.getElementById("messages");
 const textarea = document.querySelector(".messageInput textarea");
 const sendBtn = document.querySelector(".messageInput button");
-const channelButtons = document.querySelectorAll(".channel");
+const channelBtns = document.querySelectorAll(".channel");
 
-if (messagesContainer && textarea && sendBtn) {
+if (messagesBox && textarea && sendBtn) {
 
     let cache = [];
 
@@ -154,27 +141,25 @@ if (messagesContainer && textarea && sendBtn) {
         if (!text) return;
 
         await App.sendMessage(text);
-
         textarea.value = "";
     });
 
-    channelButtons.forEach(btn => {
+    channelBtns.forEach(btn => {
 
         btn.addEventListener("click", () => {
 
-            channelButtons.forEach(b => b.classList.remove("active"));
+            channelBtns.forEach(b => b.classList.remove("active"));
             btn.classList.add("active");
 
             App.setChannel(btn.dataset.channel);
 
             render(cache);
         });
-
     });
 
     function render(messages) {
 
-        messagesContainer.innerHTML = "";
+        messagesBox.innerHTML = "";
 
         const filtered = messages.filter(m => m.channel === App.channel);
 
@@ -188,14 +173,14 @@ if (messagesContainer && textarea && sendBtn) {
             div.innerHTML = `
                 <div class="messageHeader">
                     <span class="author">${msg.author}</span>
-                    <span class="time">${new Date(msg.createdAt).toLocaleString()}</span>
+                    <span class="time">${formatTime(msg.createdAt)}</span>
                 </div>
                 <div class="messageBody">
                     ${msg.text}
                 </div>
             `;
 
-            messagesContainer.appendChild(div);
+            messagesBox.appendChild(div);
         });
     }
 
@@ -205,11 +190,38 @@ if (messagesContainer && textarea && sendBtn) {
     });
 }
 
-/* -----------------------------
-   OPTIONAL: DEBUG LOG
------------------------------ */
+/* ---------------- MEMBERS PAGE ---------------- */
+
+const membersBox = document.getElementById("members");
+
+if (membersBox) {
+
+    const usersRef = ref(db, "users");
+
+    onValue(usersRef, (snap) => {
+
+        const data = snap.val() || {};
+        membersBox.innerHTML = "";
+
+        Object.values(data).forEach(user => {
+
+            const div = document.createElement("div");
+            div.classList.add("member");
+
+            div.innerHTML = `
+                <div class="memberName">${user.username}</div>
+                <div class="memberSub">${user.fullName || ""}</div>
+            `;
+
+            membersBox.appendChild(div);
+        });
+
+    });
+}
+
+/* ---------------- DEBUG ---------------- */
 
 console.log("Blacklist Division loaded:", {
-    auth: !!auth,
-    db: !!db
+    user: App.user,
+    channel: App.channel
 });
