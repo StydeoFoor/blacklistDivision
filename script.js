@@ -16,8 +16,7 @@ import {
     push,
     onValue,
     query,
-    orderByChild,
-    get
+    orderByChild
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
 
 /* -----------------------------
@@ -40,17 +39,23 @@ const auth = getAuth(app);
 const db = getDatabase(app);
 
 /* -----------------------------
-   APP STATE
+   GLOBAL STATE
 ----------------------------- */
 
 const App = {
-    state: {
-        user: null,
-        currentChannel: "general"
-    }
+    user: null,
+    channel: "general"
 };
 
 window.App = App;
+
+/* -----------------------------
+   AUTH STATE
+----------------------------- */
+
+onAuthStateChanged(auth, (user) => {
+    App.user = user;
+});
 
 /* -----------------------------
    HELPERS
@@ -61,35 +66,31 @@ function makeEmail(username) {
 }
 
 /* -----------------------------
-   AUTH SYSTEM
+   AUTH (SAFE)
 ----------------------------- */
 
 App.signup = async (username, password) => {
 
     const email = makeEmail(username);
 
-    const userCred = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCred.user;
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
 
-    await updateProfile(user, {
+    await updateProfile(cred.user, {
         displayName: username
     });
 
-    await set(ref(db, "users/" + user.uid), {
+    await set(ref(db, "users/" + cred.user.uid), {
         username,
         createdAt: Date.now()
     });
 
-    return user;
 };
 
 App.login = async (username, password) => {
 
     const email = makeEmail(username);
 
-    const userCred = await signInWithEmailAndPassword(auth, email, password);
-
-    return userCred.user;
+    await signInWithEmailAndPassword(auth, email, password);
 };
 
 App.logout = async () => {
@@ -97,139 +98,118 @@ App.logout = async () => {
 };
 
 /* -----------------------------
-   AUTH LISTENER
------------------------------ */
-
-onAuthStateChanged(auth, (user) => {
-
-    App.state.user = user;
-
-    if (user) {
-        console.log("Logged in as:", user.displayName);
-    } else {
-        console.log("Not logged in");
-    }
-
-});
-
-/* -----------------------------
-   CHANNEL SYSTEM
------------------------------ */
-
-App.setChannel = (channel) => {
-    App.state.currentChannel = channel;
-};
-
-/* -----------------------------
-   MESSAGES
+   MESSAGES SYSTEM
 ----------------------------- */
 
 App.sendMessage = async (text) => {
 
-    if (!App.state.user) return;
+    if (!App.user) return;
 
     const msgRef = push(ref(db, "messages"));
 
     await set(msgRef, {
         text,
-        author: App.state.user.displayName,
-        uid: App.state.user.uid,
-        channel: App.state.currentChannel,
+        author: App.user.displayName,
+        uid: App.user.uid,
+        channel: App.channel,
         createdAt: Date.now()
     });
 };
 
 App.listenMessages = (callback) => {
 
-    const q = query(
-        ref(db, "messages"),
-        orderByChild("createdAt")
-    );
+    const q = query(ref(db, "messages"), orderByChild("createdAt"));
 
-    onValue(q, (snapshot) => {
+    onValue(q, (snap) => {
 
-        const data = snapshot.val() || {};
-        const messages = Object.values(data);
-
-        callback(messages);
+        const data = snap.val() || {};
+        callback(Object.values(data));
     });
 };
 
+App.setChannel = (c) => {
+    App.channel = c;
+};
+
+/* =========================================================
+   🧠 PAGE DETECTION (THIS FIXES YOUR ERROR)
+========================================================= */
+
 /* -----------------------------
-   UI (MESSAGES PAGE ONLY)
+   MESSAGES PAGE
 ----------------------------- */
 
 const messagesContainer = document.getElementById("messages");
-const textarea = document.querySelector("textarea");
+const textarea = document.querySelector(".messageInput textarea");
 const sendBtn = document.querySelector(".messageInput button");
 const channelButtons = document.querySelectorAll(".channel");
 
-let lastMessages = [];
+if (messagesContainer && textarea && sendBtn) {
 
-/* CHANNEL SWITCH */
+    let cache = [];
 
-channelButtons.forEach(btn => {
+    sendBtn.addEventListener("click", async () => {
 
-    btn.addEventListener("click", () => {
+        const text = textarea.value.trim();
+        if (!text) return;
 
-        channelButtons.forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
+        await App.sendMessage(text);
 
-        App.setChannel(btn.dataset.channel);
-
-        render(lastMessages);
+        textarea.value = "";
     });
 
-});
+    channelButtons.forEach(btn => {
 
-/* SEND MESSAGE */
+        btn.addEventListener("click", () => {
 
-sendBtn.addEventListener("click", async () => {
+            channelButtons.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
 
-    const text = textarea.value.trim();
-    if (!text) return;
+            App.setChannel(btn.dataset.channel);
 
-    await App.sendMessage(text);
+            render(cache);
+        });
 
-    textarea.value = "";
-});
+    });
 
-/* RENDER */
+    function render(messages) {
 
-function render(messages) {
+        messagesContainer.innerHTML = "";
 
-    messagesContainer.innerHTML = "";
+        const filtered = messages.filter(m => m.channel === App.channel);
 
-    const filtered = messages.filter(
-        m => m.channel === App.state.currentChannel
-    );
+        filtered.sort((a, b) => a.createdAt - b.createdAt);
 
-    filtered.sort((a, b) => a.createdAt - b.createdAt);
+        filtered.forEach(msg => {
 
-    filtered.forEach(msg => {
+            const div = document.createElement("div");
+            div.classList.add("message");
 
-        const div = document.createElement("div");
-        div.classList.add("message");
+            div.innerHTML = `
+                <div class="messageHeader">
+                    <span class="author">${msg.author}</span>
+                    <span class="time">${new Date(msg.createdAt).toLocaleString()}</span>
+                </div>
+                <div class="messageBody">
+                    ${msg.text}
+                </div>
+            `;
 
-        const time = new Date(msg.createdAt).toLocaleString();
+            messagesContainer.appendChild(div);
+        });
+    }
 
-        div.innerHTML = `
-            <div class="messageHeader">
-                <span class="author">${msg.author}</span>
-                <span class="time">${time}</span>
-            </div>
-            <div class="messageBody">
-                ${msg.text}
-            </div>
-        `;
-
-        messagesContainer.appendChild(div);
+    App.listenMessages((msgs) => {
+        cache = msgs;
+        render(msgs);
     });
 }
 
-/* LIVE UPDATES */
+/* -----------------------------
+   OPTIONAL: DEBUG LOG
+----------------------------- */
 
-App.listenMessages((messages) => {
-    lastMessages = messages;
-    render(messages);
+console.log("Blacklist Division loaded:", {
+    auth: !!auth,
+    db: !!db
 });
