@@ -29,14 +29,14 @@ import {
 // Firebase config
 
 const firebaseConfig = {
-    apiKey: "AIzaSyByFGPF4f4kh_dmvWhrvV5g5k-agCR4cxmI",
-    authDomain: "blacklist-division.firebaseapp.com",
-    databaseURL: "https://blacklist-division-default-rtdb.firebaseio.com",
-    projectId: "blacklist-division",
-    storageBucket: "blacklist-division.firebasestorage.app",
-    messagingSenderId: "352904791140",
-    appId: "1:352904791140:web:98451c53d6c36d86d64b71",
-    measurementId: "G-RV4XERPZY7"
+  apiKey: "AIzaSyByFGPF4f4kh_dmvWhrvVg5k-agCR4cxmI",
+  authDomain: "blacklist-division.firebaseapp.com",
+  databaseURL: "https://blacklist-division-default-rtdb.firebaseio.com",
+  projectId: "blacklist-division",
+  storageBucket: "blacklist-division.firebasestorage.app",
+  messagingSenderId: "352904791140",
+  appId: "1:352904791140:web:98451c53d6c36d86d64b71",
+  measurementId: "G-RV4XERPZY7"
 };
 
 
