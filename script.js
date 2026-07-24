@@ -62,6 +62,7 @@ const App = {
 
 window.App = App;
 
+console.log("Blacklist script loaded");
 
 // Helpers
 
