@@ -1,255 +1,924 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+// Blacklist Division v1.0
+// Firebase setup and core systems
+
+import { initializeApp } from 
+"https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
 
 import {
     getAuth,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
-    updateProfile,
-    onAuthStateChanged,
-    signOut
-} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+    signOut,
+    onAuthStateChanged
+} from 
+"https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
 
 import {
     getDatabase,
     ref,
     set,
+    get,
     push,
     onValue,
     query,
     orderByChild
-} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
+} from 
+"https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
 
-/* ---------------- FIREBASE ---------------- */
+
+// Firebase config
 
 const firebaseConfig = {
-  apiKey: "AIzaSyByFGPF4f4kh_dmvWhrvVg5k-agCR4cxmI",
-  authDomain: "blacklist-division.firebaseapp.com",
-  databaseURL: "https://blacklist-division-default-rtdb.firebaseio.com",
-  projectId: "blacklist-division",
-  storageBucket: "blacklist-division.firebasestorage.app",
-  messagingSenderId: "352904791140",
-  appId: "1:352904791140:web:98451c53d6c36d86d64b71",
-  measurementId: "G-RV4XERPZY7"
+    apiKey: "AIzaSyByFGPF4f4kh_dmvWhrvV5g5k-agCR4cxmI",
+    authDomain: "blacklist-division.firebaseapp.com",
+    databaseURL: "https://blacklist-division-default-rtdb.firebaseio.com",
+    projectId: "blacklist-division",
+    storageBucket: "blacklist-division.firebasestorage.app",
+    messagingSenderId: "352904791140",
+    appId: "1:352904791140:web:98451c53d6c36d86d64b71",
+    measurementId: "G-RV4XERPZY7"
 };
+
 
 const app = initializeApp(firebaseConfig);
+
 const auth = getAuth(app);
+
 const db = getDatabase(app);
 
-/* ---------------- GLOBAL STATE ---------------- */
+
+// Global app state
 
 const App = {
+
     user: null,
-    channel: "general"
+
+    profile: null,
+
+    channel: localStorage.getItem("channel") || "general"
+
 };
+
 
 window.App = App;
 
-/* ---------------- HELPERS ---------------- */
 
-function makeEmail(username) {
-    return username.toLowerCase().replace(/\s/g, "") + "@blacklist.local";
+// Helpers
+
+function makeEmail(username){
+
+    return username
+    .toLowerCase()
+    .replace(/\s/g,"")
+    +"@blacklist.local";
+
 }
 
-function formatTime(ms) {
-    if (!ms) return "";
-    return new Date(ms).toLocaleString();
+
+function formatTime(time){
+
+    return new Date(time)
+    .toLocaleString([],{
+        dateStyle:"short",
+        timeStyle:"short"
+    });
+
 }
 
-/* ---------------- AUTH ---------------- */
 
-App.signup = async (username, password, fullName, referral) => {
+// Navigation
 
-    const email = makeEmail(username);
+function updateNavigation(user){
 
-    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    const nav = document.querySelector("nav");
 
-    const user = cred.user;
+    if(!nav)
+        return;
 
-    await updateProfile(user, {
-        displayName: username
-    });
 
-    await set(ref(db, "users/" + user.uid), {
-        username,
-        fullName,
-        referral,
-        createdAt: Date.now()
-    });
-};
+    if(user){
 
-const signupBtn = document.getElementById("signupButton");
+        nav.innerHTML = `
 
-if (signupBtn) {
+        <a href="index.html" class="navButton">
+        Home
+        </a>
 
-    signupBtn.addEventListener("click", async () => {
+        <a href="members.html" class="navButton">
+        Members
+        </a>
 
-        const inputs = document.querySelectorAll(".loginCard input");
+        <a href="messages.html" class="navButton">
+        Messages
+        </a>
 
-        const fullName = inputs[0].value;
-        const username = inputs[1].value;
-        const password = inputs[2].value;
-        const referral = inputs[3].value;
+        <a href="files.html" class="navButton">
+        Files
+        </a>
 
-        if (!username || !password) {
-            alert("Nickname and password required");
-            return;
+        <button id="logoutButton" class="navButton">
+        Logout
+        </button>
+
+        `;
+
+
+        const logout =
+        document.getElementById("logoutButton");
+
+
+        if(logout){
+
+            logout.onclick = async()=>{
+
+                await signOut(auth);
+
+                location.href="login.html";
+
+            };
+
         }
 
-        try {
-            await App.signup(username, password, fullName, referral);
-            alert("Account created successfully");
-        } catch (err) {
-            console.error(err);
-            alert(err.message);
-        }
-    });
-}
 
-App.login = async (username, password) => {
+    } else {
 
-    const email = makeEmail(username);
 
-    await signInWithEmailAndPassword(auth, email, password);
-};
+        nav.innerHTML = `
 
-App.logout = async () => {
-    await signOut(auth);
-};
+        <a href="index.html" class="navButton">
+        Home
+        </a>
 
-onAuthStateChanged(auth, (user) => {
-    App.user = user || null;
-});
+        <a href="signup.html" class="navButton">
+        Join
+        </a>
 
-/* ---------------- CHANNELS ---------------- */
+        <a href="login.html" class="navButton">
+        Login
+        </a>
 
-App.setChannel = (channel) => {
-    App.channel = channel;
-};
+        `;
 
-/* ---------------- MESSAGES ---------------- */
-
-App.sendMessage = async (text) => {
-
-    if (!App.user || !text) return;
-
-    await push(ref(db, "messages"), {
-        text,
-        author: App.user.displayName,
-        uid: App.user.uid,
-        channel: App.channel,
-        createdAt: Date.now()
-    });
-};
-
-App.listenMessages = (callback) => {
-
-    const q = query(ref(db, "messages"), orderByChild("createdAt"));
-
-    onValue(q, (snap) => {
-        const data = snap.val() || {};
-        callback(Object.values(data));
-    });
-};
-
-/* ---------------- MESSAGES PAGE ---------------- */
-
-const messagesBox = document.getElementById("messages");
-const textarea = document.querySelector(".messageInput textarea");
-const sendBtn = document.querySelector(".messageInput button");
-const channelBtns = document.querySelectorAll(".channel");
-
-if (messagesBox && textarea && sendBtn) {
-
-    let cache = [];
-
-    sendBtn.addEventListener("click", async () => {
-
-        const text = textarea.value.trim();
-        if (!text) return;
-
-        await App.sendMessage(text);
-        textarea.value = "";
-    });
-
-    channelBtns.forEach(btn => {
-
-        btn.addEventListener("click", () => {
-
-            channelBtns.forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
-
-            App.setChannel(btn.dataset.channel);
-
-            render(cache);
-        });
-    });
-
-    function render(messages) {
-
-        messagesBox.innerHTML = "";
-
-        const filtered = messages.filter(m => m.channel === App.channel);
-
-        filtered.sort((a, b) => a.createdAt - b.createdAt);
-
-        filtered.forEach(msg => {
-
-            const div = document.createElement("div");
-            div.classList.add("message");
-
-            div.innerHTML = `
-                <div class="messageHeader">
-                    <span class="author">${msg.author}</span>
-                    <span class="time">${formatTime(msg.createdAt)}</span>
-                </div>
-                <div class="messageBody">
-                    ${msg.text}
-                </div>
-            `;
-
-            messagesBox.appendChild(div);
-        });
     }
 
-    App.listenMessages((msgs) => {
-        cache = msgs;
-        render(msgs);
-    });
+}
+// Authentication and application system
+
+
+// Submit application
+
+async function submitApplication(){
+
+    const fullName =
+    document.getElementById("fullName")?.value.trim();
+
+
+    const nickname =
+    document.getElementById("nickname")?.value.trim();
+
+
+    const password =
+    document.getElementById("password")?.value;
+
+
+    const referral =
+    document.getElementById("referral")?.value.trim();
+
+
+    const reason =
+    document.getElementById("reason")?.value.trim();
+
+
+
+    if(
+        !fullName ||
+        !nickname ||
+        !password
+    ){
+
+        alert("Please fill out all required fields.");
+
+        return;
+
+    }
+
+
+
+    try{
+
+
+        await push(
+            ref(db,"applications"),
+            {
+
+                fullName,
+
+                nickname,
+
+                password,
+
+                referral,
+
+                reason,
+
+                status:"pending",
+
+                submittedAt:Date.now()
+
+            }
+        );
+
+
+        alert(
+        "Application submitted. Check back later for approval."
+        );
+
+
+        location.href="index.html";
+
+
+    }
+    catch(error){
+
+        console.error(error);
+
+        alert(error.message);
+
+    }
+
 }
 
-/* ---------------- MEMBERS PAGE ---------------- */
 
-const membersBox = document.getElementById("members");
 
-if (membersBox) {
+// Signup button
 
-    const usersRef = ref(db, "users");
+const signupButton =
+document.getElementById("signupButton");
 
-    onValue(usersRef, (snap) => {
 
-        const data = snap.val() || {};
-        membersBox.innerHTML = "";
+if(signupButton){
 
-        Object.values(data).forEach(user => {
 
-            const div = document.createElement("div");
-            div.classList.add("member");
+    signupButton.addEventListener(
+    "click",
+    submitApplication
+    );
 
-            div.innerHTML = `
-                <div class="memberName">${user.username}</div>
-                <div class="memberSub">${user.fullName || ""}</div>
+
+}
+
+
+
+// Login system
+
+async function loginUser(){
+
+    const username =
+    document.getElementById("loginUsername")?.value.trim();
+
+
+    const password =
+    document.getElementById("loginPassword")?.value;
+
+
+
+    if(!username || !password){
+
+        alert("Enter username and password.");
+
+        return;
+
+    }
+
+
+
+    try{
+
+
+        await signInWithEmailAndPassword(
+            auth,
+            makeEmail(username),
+            password
+        );
+
+
+        location.href="messages.html";
+
+
+    }
+    catch(error){
+
+        console.error(error);
+
+        alert(
+        "Login failed. Check your credentials."
+        );
+
+    }
+
+
+}
+
+
+
+// Login button
+
+const loginButton =
+document.getElementById("loginButton");
+
+
+if(loginButton){
+
+
+    loginButton.addEventListener(
+    "click",
+    loginUser
+    );
+
+
+}
+
+
+
+// Load user profile
+
+async function loadProfile(user){
+
+
+    const snapshot =
+    await get(
+        ref(db,"users/"+user.uid)
+    );
+
+
+    if(snapshot.exists()){
+
+        App.profile =
+        snapshot.val();
+
+    }
+
+
+}
+
+
+
+// Authentication listener
+
+onAuthStateChanged(
+auth,
+async(user)=>{
+
+
+    App.user = user || null;
+
+
+    if(user){
+
+        await loadProfile(user);
+
+    }
+    else{
+
+        App.profile = null;
+
+    }
+
+
+
+    updateNavigation(user);
+
+
+
+    protectPages(user);
+
+
+});
+
+
+
+// Page protection
+
+function protectPages(user){
+
+
+    const protectedPages = [
+
+        "members.html",
+
+        "messages.html",
+
+        "files.html"
+
+    ];
+
+
+    const current =
+    location.pathname
+    .split("/")
+    .pop();
+
+
+
+    if(
+        protectedPages.includes(current)
+        &&
+        !user
+    ){
+
+        location.href="login.html";
+
+    }
+
+
+
+}
+// Messaging and channel system
+
+
+// Set channel
+
+function setChannel(channel){
+
+    App.channel = channel;
+
+    localStorage.setItem(
+        "channel",
+        channel
+    );
+
+}
+
+
+
+// Send message
+
+async function sendMessage(text){
+
+
+    if(!App.user){
+
+        alert("You must be logged in.");
+
+        return;
+
+    }
+
+
+    if(!text)
+        return;
+
+
+
+    await push(
+        ref(db,"messages"),
+        {
+
+            text,
+
+            author:
+            App.profile?.nickname ||
+            App.user.displayName ||
+            "Unknown",
+
+
+            uid:
+            App.user.uid,
+
+
+            channel:
+            App.channel,
+
+
+            createdAt:
+            Date.now()
+
+        }
+    );
+
+
+}
+
+
+
+// Message listener
+
+function listenMessages(callback){
+
+
+    const messagesQuery =
+    query(
+        ref(db,"messages"),
+        orderByChild("createdAt")
+    );
+
+
+
+    onValue(
+    messagesQuery,
+    snapshot=>{
+
+
+        const data =
+        snapshot.val() || {};
+
+
+
+        callback(
+            Object.values(data)
+        );
+
+
+    });
+
+
+}
+
+
+
+// Messages page
+
+const messagesBox =
+document.getElementById("messages");
+
+
+const messageInput =
+document.getElementById("messageInput");
+
+
+const sendButton =
+document.getElementById("sendMessage");
+
+
+const channelButtons =
+document.querySelectorAll(".channel");
+
+
+
+if(messagesBox){
+
+
+    let messageCache = [];
+
+
+
+    function renderMessages(){
+
+
+        messagesBox.innerHTML="";
+
+
+
+        const filtered =
+        messageCache.filter(
+            message=>
+            message.channel === App.channel
+        );
+
+
+
+        filtered.forEach(message=>{
+
+
+            const div =
+            document.createElement("div");
+
+
+
+            div.className="message";
+
+
+
+            div.innerHTML=`
+
+            <div class="messageHeader">
+
+                <span class="author">
+                ${message.author}
+                </span>
+
+
+                <span class="time">
+                ${formatTime(message.createdAt)}
+                </span>
+
+            </div>
+
+
+            <div class="messageBody">
+
+            ${message.text}
+
+            </div>
+
             `;
 
-            membersBox.appendChild(div);
+
+
+            messagesBox.appendChild(div);
+
+
+
         });
 
+
+
+        messagesBox.scrollTop =
+        messagesBox.scrollHeight;
+
+
+    }
+
+
+
+    listenMessages(messages=>{
+
+
+        messageCache =
+        messages.sort(
+            (a,b)=>
+            a.createdAt -
+            b.createdAt
+        );
+
+
+        renderMessages();
+
+
     });
+
+
+
+    // Send button
+
+    if(sendButton){
+
+
+        sendButton.onclick =
+        async()=>{
+
+
+            const text =
+            messageInput.value.trim();
+
+
+
+            if(!text)
+                return;
+
+
+
+            await sendMessage(text);
+
+
+
+            messageInput.value="";
+
+
+        };
+
+
+    }
+
+
+
+    // Enter to send
+
+    if(messageInput){
+
+
+        messageInput.addEventListener(
+        "keydown",
+        async(event)=>{
+
+
+            if(
+                event.key==="Enter"
+                &&
+                !event.shiftKey
+            ){
+
+                event.preventDefault();
+
+
+
+                const text =
+                messageInput.value.trim();
+
+
+
+                if(text){
+
+
+                    await sendMessage(text);
+
+
+                    messageInput.value="";
+
+
+                }
+
+
+            }
+
+
+        });
+
+
+    }
+
+
+
+    // Channel buttons
+
+    channelButtons.forEach(
+    button=>{
+
+
+        button.onclick=()=>{
+
+
+            channelButtons.forEach(
+            b=>
+            b.classList.remove("active")
+            );
+
+
+
+            button.classList.add("active");
+
+
+
+            setChannel(
+                button.dataset.channel
+            );
+
+
+
+            renderMessages();
+
+
+        };
+
+
+    });
+
+
+
+    // Restore previous channel
+
+    channelButtons.forEach(
+    button=>{
+
+
+        if(
+            button.dataset.channel ===
+            App.channel
+        ){
+
+            button.classList.add("active");
+
+        }
+        else{
+
+            button.classList.remove("active");
+
+        }
+
+
+    });
+
+
 }
 
-/* ---------------- DEBUG ---------------- */
+// Members system
 
-console.log("Blacklist Division loaded:", {
-    user: App.user,
-    channel: App.channel
-});
+
+const membersContainer =
+document.getElementById("members");
+
+
+
+if(membersContainer){
+
+
+    const usersRef =
+    ref(db,"users");
+
+
+
+    onValue(
+    usersRef,
+    snapshot=>{
+
+
+        const users =
+        snapshot.val() || {};
+
+
+
+        membersContainer.innerHTML="";
+
+
+
+        Object.values(users)
+        .sort(
+            (a,b)=>
+            a.nickname.localeCompare(
+                b.nickname
+            )
+        )
+        .forEach(user=>{
+
+
+            const card =
+            document.createElement("div");
+
+
+
+            card.className =
+            "memberCard";
+
+
+
+            card.innerHTML=`
+
+            <h2>
+            ${user.nickname}
+            </h2>
+
+
+            <p>
+            ${user.role || "Member"}
+            </p>
+
+            `;
+
+
+
+            membersContainer.appendChild(card);
+
+
+
+        });
+
+
+
+    });
+
+
+}
+
+
+
+// User utilities
+
+
+App.getUser = ()=>{
+
+    return App.user;
+
+};
+
+
+
+App.getProfile = ()=>{
+
+    return App.profile;
+
+};
+
+
+
+// Future role system
+
+App.hasRole = (role)=>{
+
+
+    if(!App.profile)
+        return false;
+
+
+
+    return App.profile.role === role;
+
+
+};
+
+
+
+// Console debug
+
+console.log(
+"Blacklist Division initialized",
+{
+
+    user:
+    App.user,
+
+
+    channel:
+    App.channel
+
+}
+);

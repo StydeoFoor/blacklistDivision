@@ -3,40 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Request Clearance | Blacklist Division</title>
+    <title>Blacklist Division</title>
 
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="loginContainer">
+    <header class="topbar">
+        <div class="logo">
+            BLACKLIST DIVISION
+        </div>
 
-    <div class="loginCard">
+        <nav>
+            <a href="index.html" class="navButton">Home</a>
+            <a href="members.html" class="navButton">Members</a>
+            <a href="messages.html" class="navButton">Messages</a>
+            <a href="files.html" class="navButton">Files</a>
+            <a href="signup.html" class="navButton">Join</a>
+            <a href="login.html" class="navButton">Login</a>
+        </nav>
+    </header>
 
-        <h1>REQUEST CLEARANCE</h1>
-        <p>Create an account</p>
+    <main>
 
-        <input type="text" placeholder="Full Name">
+        <section class="hero">
+            <h1>Our application process.</h1>
+            <p>A few things you may want to note before you make an application</p>
+            <br>
+            <br>
+            <h2>1: Access is not guaranteed.</h2>
+            <p style="color: #9f9f9f;">This website, without the messaging services, is essentially a game studio. Because we've had incidents with "snitches" before, on top of the fact our games are not for kids, we can be rather unforgiving in our application process. You will not automatically be rejected, but should you have bad relations with the executive members, your chances won't be great. However, if you both aren't seen as a snitch, and are at least neutral with executives, you should be accepted.</p>
+            <br>
+            <h2>2: You can see if you are accepted or rejected in this site.</h2>
+            <p style="color: #9f9f9f;">Because we don't want to search a school of over a thousand students to find you, you can just check back on this site to see if your application is accepted, rejected, or still pending. If your application is pending, you will see whether or not we've looked at it and are just considering it, if you are rejected, you will be told why, if you are accepted, you will automatically be logged in with pretty little confetti on your screen. Should your nickname be changed, you will be told what your nickname is.</p>
+            <br>
+            <h2>3: Fill out who referred you, yes, it matters to us that much.</h2>
+            <p style="color: #9f9f9f;">As stated above, access is not just guaranteed, but if you happen to be referred by a high ranking member, your chances DO ACTUALLY INCREASE in being accepted, granted, if you are referred by an officer, you still can be rejected, but will have higher chances since we have an idea we can trust you. We will double check with the referring member to make sure that you aren't lying to us. We do also expect you to have a reason to want to join, but if you do not have one, you can just either write you are just curious or leave the field blank.</p>
+            <br>
+            <br>
+            <a style="color: #4287f5; font-size: 45px;" href="signupform.html">Sign up here.</a>
+        </section>
 
-        <input type="email" placeholder="A nickname of your choosing">
+    </main>
 
-        <input type="password" placeholder="Password">
-
-        <input type="text" placeholder="Nickname of the member who referred you">
-
-        <button id="signupButton">
-            REQUEST ACCESS
-        </button>
-
-        <span>
-            Already have clearance?
-            <a href="login.html">Authenticate</a>
-        </span>
-
-    </div>
-
-</div>
-
-<script type="module" src="script.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>
